@@ -1,0 +1,37 @@
+<div class="page-container">
+<!-- Hero -->
+<section class="hero">
+  <img src="assets/banner3.gif" alt="Shopping Banner" />
+</section>
+
+<!-- Carousel -->
+<section class="carousel-container">
+  <button class="nav-btn left" (click)="prev()">❮</button>
+
+  <img
+    [src]="carouselImages[currentIndex]"
+    class="carousel-image"
+  />
+
+  <button class="nav-btn right" (click)="next()">❯</button>
+</section>
+
+<!-- Products -->
+<h2 class="section-title">Featured Products</h2>
+
+<p *ngIf="products.length === 0">Loading products...</p>
+
+<div class="product-grid">
+  <div *ngFor="let p of products" class="product-card">
+    <img [src]="p.image" alt="{{ p.name }}" />
+
+    <h3>{{ p.name }}</h3>
+    <p class="price">₹ {{ p.price }}</p>
+<button class="product-btn" (click)="viewProduct(p.id)">
+  View Details
+</button>
+
+   
+  </div>
+</div>
+</div>
