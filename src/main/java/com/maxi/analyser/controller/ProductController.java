@@ -20,6 +20,7 @@ public class ProductController {
 
     @GetMapping
     public List<Product> getProducts() {
+        //adding sample comment
         return productService.getAllProducts();
 
     }
