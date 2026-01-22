@@ -237,8 +237,21 @@ public class RiskService {
     @Value("${risk.backend.src.rel}")
     private String backendSrcRel;
 
-    private static final Pattern MAPPING =
-            Pattern.compile("@(GetMapping|PostMapping|PutMapping|DeleteMapping|PatchMapping)\\s*\\(\\s*\"([^\"]+)\"");
+//    private static final Pattern MAPPING =
+//            Pattern.compile("@(GetMapping|PostMapping|PutMapping|DeleteMapping|PatchMapping)\\s*\\(\\s*\"([^\"]+)\"");
+
+
+    // class-level base path: @RequestMapping("/api/products") OR @RequestMapping(value="/api/products")
+    private static final Pattern CLASS_BASE_MAPPING =
+            Pattern.compile("@RequestMapping\\s*\\(\\s*(?:(?:value|path)\\s*=\\s*)?\"([^\"]+)\"");
+
+    // method-level mapping with explicit path: @GetMapping("/x") OR @GetMapping(value="/x") OR @GetMapping(path="/x")
+    private static final Pattern METHOD_MAPPING_WITH_PATH =
+            Pattern.compile("@(GetMapping|PostMapping|PutMapping|DeleteMapping|PatchMapping)\\s*\\(\\s*(?:(?:value|path)\\s*=\\s*)?\"([^\"]*)\"");
+
+    // method-level mapping WITHOUT any args: @GetMapping OR @GetMapping()
+    private static final Pattern METHOD_MAPPING_NO_ARGS =
+            Pattern.compile("@(GetMapping|PostMapping|PutMapping|DeleteMapping|PatchMapping)\\s*(?:\\(\\s*\\))?\\s*");
 
     public RiskService(GitService git) {
         this.git = git;
@@ -311,22 +324,99 @@ public class RiskService {
 
     private String pathUnix(String p) { return p.replace('\\','/'); }
 
-    private Set<String> detectChangedApiEndpoints(List<String> apiFilesRelative) throws IOException {
+//    private Set<String> detectChangedApiEndpoints(List<String> apiFilesRelative) throws IOException {
+//        Set<String> apis = new HashSet<>();
+//        for (String rel : apiFilesRelative) {
+//            Path file = Paths.get(repoRoot, rel);
+//            log.info("Scanning controller file: {}", file);
+//            if (!Files.exists(file)) {
+//                log.warn("Changed file not found on disk: {}", file);
+//                continue;
+//            }
+//            String content = Files.readString(file);
+//            Matcher m = MAPPING.matcher(content);
+//            while (m.find()) {
+//                apis.add(m.group(2)); // "/api/..." path
+//            }
+//        }
+//        return apis;
+//    }
+
+
+    private Set<String> detectChangedApiEndpoints(List<String> controllerFilesRel) throws IOException {
         Set<String> apis = new HashSet<>();
-        for (String rel : apiFilesRelative) {
+
+        for (String rel : controllerFilesRel) {
             Path file = Paths.get(repoRoot, rel);
             log.info("Scanning controller file: {}", file);
+
             if (!Files.exists(file)) {
-                log.warn("Changed file not found on disk: {}", file);
+                log.warn("Controller file not found on disk: {}", file);
                 continue;
             }
+
             String content = Files.readString(file);
-            Matcher m = MAPPING.matcher(content);
-            while (m.find()) {
-                apis.add(m.group(2)); // "/api/..." path
+
+            // 1) Find base path from class-level @RequestMapping
+            String basePath = "";
+            Matcher baseMatcher = CLASS_BASE_MAPPING.matcher(content);
+            if (baseMatcher.find()) {
+                basePath = baseMatcher.group(1).trim(); // e.g. "/api/products"
             }
+            log.info("Base path detected: {}", basePath);
+
+            // 2) Extract all method-level mappings with explicit paths
+            Set<String> foundFullPaths = new HashSet<>();
+            Matcher m1 = METHOD_MAPPING_WITH_PATH.matcher(content);
+            while (m1.find()) {
+                String methodPath = m1.group(2).trim();  // e.g. "/{id}" or "" if explicitly empty
+                String full = normalizePath(basePath, methodPath);
+                if (!full.isBlank()) {
+                    foundFullPaths.add(full);
+                }
+            }
+
+            // 3) Handle mappings without args (e.g., @GetMapping with no "()")
+            // If controller contains "@GetMapping" but NOT "@GetMapping(" with a quote,
+            // it means there exists a no-path mapping. That should map to basePath.
+            // Same for Post/Put/Delete/Patch.
+            if (containsNoPathMapping(content, "GetMapping"))  foundFullPaths.add(basePath);
+            if (containsNoPathMapping(content, "PostMapping")) foundFullPaths.add(basePath);
+            if (containsNoPathMapping(content, "PutMapping"))  foundFullPaths.add(basePath);
+            if (containsNoPathMapping(content, "DeleteMapping")) foundFullPaths.add(basePath);
+            if (containsNoPathMapping(content, "PatchMapping")) foundFullPaths.add(basePath);
+
+            // add to final set
+            apis.addAll(foundFullPaths);
         }
+
+        // remove empty strings just in case
+        apis.removeIf(s -> s == null || s.isBlank());
+
         return apis;
+    }
+
+    private boolean containsNoPathMapping(String content, String mappingName) {
+        // matches "@GetMapping" or "@GetMapping()" without a quoted argument
+        // and avoids counting "@GetMapping("/x")"
+        Pattern p = Pattern.compile("@" + mappingName + "\\s*(\\(\\s*\\))?(?!\\s*\\(\\s*\"|\\s*\\(\\s*(value|path)\\s*=\\s*\")");
+        return p.matcher(content).find();
+    }
+
+    private String normalizePath(String base, String method) {
+        if (base == null) base = "";
+        if (method == null) method = "";
+        base = base.trim();
+        method = method.trim();
+
+        if (base.isEmpty() && method.isEmpty()) return "";
+
+        if (method.isEmpty()) return base; // @GetMapping with explicit "" or no args -> base
+
+        // ensure proper "/" joining
+        if (!base.endsWith("/") && !method.startsWith("/")) return base + "/" + method;
+        if (base.endsWith("/") && method.startsWith("/")) return base + method.substring(1);
+        return base + method;
     }
 
     private Map<String, List<String>> mapApisToUiComponents(Set<String> apis) throws IOException {
