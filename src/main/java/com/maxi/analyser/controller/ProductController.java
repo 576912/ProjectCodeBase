@@ -18,7 +18,7 @@ public class ProductController {
         this.productService = productService;
     }
 
-    @GetMapping
+    @GetMapping("/getAll")
     public List<Product> getProducts() {
         //adding sample comment
         return productService.getAllProducts();
