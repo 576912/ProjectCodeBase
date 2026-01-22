@@ -15,6 +15,7 @@ public class ProductService {
     private ProductRepository repo;
 
     public List<Product> getAllProducts() {
+        System.out.println("Modifying the  /api/product API by ading this sysout");
         return repo.findAll();
     }
 
