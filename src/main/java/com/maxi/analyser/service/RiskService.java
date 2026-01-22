@@ -234,6 +234,9 @@ public class RiskService {
     @Value("${risk.report.path}")
     private String reportPath;
 
+    @Value("${risk.backend.src.rel}")
+    private String backendSrcRel;
+
     private static final Pattern MAPPING =
             Pattern.compile("@(GetMapping|PostMapping|PutMapping|DeleteMapping|PatchMapping)\\s*\\(\\s*\"([^\"]+)\"");
 
@@ -265,10 +268,19 @@ public class RiskService {
             log.info("Changed files ({}): {}", changed.size(), changed);
 
             // 3) Filter backend controller java files
+//            List<String> backendApiFiles = changed.stream()
+//                    .filter(f -> f.replace('\\','/').startsWith(pathUnix(backendJavaPath)))
+//                    .filter(f -> f.contains("Controller"))
+//                    .toList();
+            String backendPrefix = backendSrcRel.replace("\\", "/") + "/";
+
             List<String> backendApiFiles = changed.stream()
-                    .filter(f -> f.replace('\\','/').startsWith(pathUnix(backendJavaPath)))
+                    .map(s -> s.replace("\\", "/"))
+                    .filter(f -> f.startsWith(backendPrefix))
                     .filter(f -> f.contains("Controller"))
+                    .filter(f -> f.endsWith(".java"))
                     .toList();
+
             log.info("Backend API Files Changed: {}", backendApiFiles);
 
             // 4) Detect changed API endpoints
@@ -286,6 +298,12 @@ public class RiskService {
             saveRiskReport(items);
             log.info("Risk report saved at {}", reportPath);
 
+
+            log.info("repoRoot={}", repoRoot);
+            log.info("backendJavaPath exists? {}", Files.exists(Paths.get(backendJavaPath)));
+            log.info("frontendSrcPath exists? {}", Files.exists(Paths.get(frontendSrcPath)));
+            log.info("backendPrefix (relative)={}", backendPrefix);
+
         } catch (Exception e) {
             log.error("Error processing risk: ", e);
         }
@@ -297,6 +315,7 @@ public class RiskService {
         Set<String> apis = new HashSet<>();
         for (String rel : apiFilesRelative) {
             Path file = Paths.get(repoRoot, rel);
+            log.info("Scanning controller file: {}", file);
             if (!Files.exists(file)) {
                 log.warn("Changed file not found on disk: {}", file);
                 continue;

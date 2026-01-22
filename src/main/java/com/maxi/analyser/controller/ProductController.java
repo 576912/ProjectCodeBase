@@ -2,6 +2,8 @@ package com.maxi.analyser.controller;
 
 import com.maxi.analyser.entity.Product;
 import com.maxi.analyser.service.ProductService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -12,14 +14,18 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/products")
 public class ProductController {
+
+    Logger log= LoggerFactory.getLogger(ProductController.class);
     private final ProductService productService;
 
     public ProductController(ProductService productService) {
         this.productService = productService;
     }
 
-    @GetMapping("/getAll")
+    @GetMapping
     public List<Product> getProducts() {
+        log.info("Get all products called..");
+
         //adding sample comment
         return productService.getAllProducts();
 
