@@ -26,7 +26,6 @@ public class ProductController {
     public List<Product> getProducts() {
         log.info("Get all products method is called..");
         log.info("Added log");
-
         //adding sample comment
         return productService.getAllProducts();
 
@@ -36,6 +35,7 @@ public class ProductController {
         return productService.saveProduct(product);
     }
     @GetMapping("/{id}")
+
     public ResponseEntity<Product> getProductById(@PathVariable Long id) {
         return productService.getProductById(id)
                 .map(ResponseEntity::ok)
