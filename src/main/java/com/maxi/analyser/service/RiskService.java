@@ -1,205 +1,3 @@
-//package com.maxi.analyser.service;
-//
-//
-//
-//
-//
-//import org.slf4j.Logger;
-//import org.slf4j.LoggerFactory;
-//import org.springframework.stereotype.Service;
-//import org.springframework.util.FileCopyUtils;
-//
-//import java.io.*;
-//import java.nio.charset.StandardCharsets;
-//import java.nio.file.*;
-//import java.util.*;
-//import java.util.regex.*;
-//
-//@Service
-//
-//public class RiskService {
-//    Logger log= LoggerFactory.getLogger(RiskService.class);
-//
-//    private static final String BACKEND_PATH = "ecommerce-backend-master/src/main/java";
-//    private static final String FRONTEND_PATH = "ecom-backend-master/UI/api-impact-ui/src/app";
-//    private static final String REPORT_PATH = "ecommerce-backend-master/src/main/resources/risk-report.json";
-//
-//    /**
-//     * Main Entry Method
-//     */
-//    public void process(String beforeSha, String afterSha) {
-//        try {
-//            log.info("Processing risk for commits {} -> {}", beforeSha, afterSha);
-//
-//            // 1. Get changed files
-//            List<String> changedFiles = getChangedFiles(beforeSha, afterSha);
-//            log.info("Changed files: {}", changedFiles);
-//
-//            // 2. Filter backend API files (only controllers)
-//            List<String> backendApiFiles = filterBackendApiFiles(changedFiles);
-//            log.info("Backend API Files Changed: {}", backendApiFiles);
-//
-//            // 3. Detect changed API endpoints
-//            Set<String> changedApis = detectChangedApiEndpoints(backendApiFiles);
-//            log.info("Detected changed APIs: {}", changedApis);
-//
-//            // 4. Map APIs → Angular Components
-//            Map<String, List<String>> apiToComponents = mapApisToUiComponents(changedApis);
-//            log.info("API → UI Map: {}", apiToComponents);
-//
-//            // 5. Generate risk score
-//            List<RiskItem> riskItems = calculateRisk(apiToComponents);
-//
-//            // 6. Save report
-//            saveRiskReport(riskItems);
-//
-//        } catch (Exception e) {
-//            log.error("Error processing risk: ", e);
-//        }
-//    }
-//
-//    /**
-//     * Run git diff command
-//     */
-//    private List<String> getChangedFiles(String beforeSha, String afterSha) throws IOException, InterruptedException {
-//        ProcessBuilder pb = new ProcessBuilder(
-//                "git", "diff", "--name-only", beforeSha, afterSha
-//        );
-//        pb.redirectErrorStream(true);
-//
-//        Process process = pb.start();
-//        BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-//
-//        List<String> files = new ArrayList<>();
-//        String line;
-//        while ((line = reader.readLine()) != null) {
-//            files.add(line);
-//        }
-//
-//        process.waitFor();
-//        return files;
-//    }
-//
-//    /**
-//     * Returns only backend controller files
-//     */
-//    private List<String> filterBackendApiFiles(List<String> files) {
-//        List<String> controllerFiles = new ArrayList<>();
-//        for (String file : files) {
-//            if (file.startsWith(BACKEND_PATH) && file.contains("Controller")) {
-//                controllerFiles.add(file);
-//            }
-//        }
-//        return controllerFiles;
-//    }
-//
-//    /**
-//     * Detect API annotations like:
-//     *   @GetMapping("/api/products")
-//     *   @PostMapping("/api/cart")
-//     */
-//    private Set<String> detectChangedApiEndpoints(List<String> apiFiles) throws IOException {
-//        Set<String> apis = new HashSet<>();
-//
-//        Pattern p = Pattern.compile("@(GetMapping|PostMapping|PutMapping|DeleteMapping)\\(\"(.*?)\"\\)");
-//
-//        for (String filePath : apiFiles) {
-//            File file = new File(filePath);
-//            String content = Files.readString(file.toPath());
-//
-//            Matcher matcher = p.matcher(content);
-//            while (matcher.find()) {
-//                apis.add(matcher.group(2)); // the "/api/xyz" part
-//            }
-//        }
-//
-//        return apis;
-//    }
-//
-//    /**
-//     * Scan Angular files for usage of such APIs
-//     */
-//    private Map<String, List<String>> mapApisToUiComponents(Set<String> apis) throws IOException {
-//        Map<String, List<String>> apiToComponent = new HashMap<>();
-//
-//        List<Path> tsFiles = listAllTsFiles(FRONTEND_PATH);
-//
-//        for (String api : apis) {
-//            apiToComponent.put(api, new ArrayList<>());
-//
-//            for (Path tsFile : tsFiles) {
-//                String content = Files.readString(tsFile);
-//
-//                if (content.contains(api)) {
-//                    apiToComponent.get(api).add(getComponentName(tsFile));
-//                }
-//            }
-//        }
-//
-//        return apiToComponent;
-//    }
-//
-//    private List<Path> listAllTsFiles(String folderPath) throws IOException {
-//        List<Path> list = new ArrayList<>();
-//
-//        Files.walk(Paths.get(folderPath))
-//                .filter(path -> path.toString().endsWith(".ts"))
-//                .forEach(list::add);
-//
-//        return list;
-//    }
-//
-//    /**
-//     * Extract Angular Component Name from File Path
-//     */
-//    private String getComponentName(Path tsFile) {
-//        String name = tsFile.getFileName().toString();
-//        return name.replace(".component.ts", "");
-//    }
-//
-//    /**
-//     * Risk calculation: simple MVP
-//     */
-//    private List<RiskItem> calculateRisk(Map<String, List<String>> apiToComponents) {
-//        List<RiskItem> list = new ArrayList<>();
-//
-//        Random random = new Random();
-//
-//        for (Map.Entry<String, List<String>> entry : apiToComponents.entrySet()) {
-//            for (String comp : entry.getValue()) {
-//                list.add(new RiskItem(comp, entry.getKey(), random.nextDouble()));
-//            }
-//        }
-//        return list;
-//    }
-//
-//    /**
-//     * Save to JSON file
-//     */
-//    private void saveRiskReport(List<RiskItem> items) throws IOException {
-//        StringBuilder sb = new StringBuilder();
-//        sb.append("[\n");
-//        for (RiskItem item : items) {
-//            sb.append("  {\n");
-//            sb.append("    \"component\": \"" + item.component + "\",\n");
-//            sb.append("    \"api\": \"" + item.api + "\",\n");
-//            sb.append("    \"risk\": " + item.risk + "\n");
-//            sb.append("  },\n");
-//        }
-//        if (!items.isEmpty()) sb.deleteCharAt(sb.length() - 2); // remove last comma
-//        sb.append("]");
-//
-//        Files.writeString(Paths.get(REPORT_PATH), sb.toString(), StandardCharsets.UTF_8);
-//    }
-//
-//
-//    /**
-//     * Inner class
-//     */
-//    record RiskItem(String component, String api, double risk) {}
-//}
-//
-
 package com.maxi.analyser.service;
 
 import org.slf4j.Logger;
@@ -207,7 +5,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.*;
 import java.util.*;
@@ -236,9 +33,6 @@ public class RiskService {
 
     @Value("${risk.backend.src.rel}")
     private String backendSrcRel;
-
-//    private static final Pattern MAPPING =
-//            Pattern.compile("@(GetMapping|PostMapping|PutMapping|DeleteMapping|PatchMapping)\\s*\\(\\s*\"([^\"]+)\"");
 
 
     // class-level base path: @RequestMapping("/api/products") OR @RequestMapping(value="/api/products")
@@ -280,11 +74,6 @@ public class RiskService {
             List<String> changed = git.diffNameOnly(base, head);
             log.info("Changed files ({}): {}", changed.size(), changed);
 
-            // 3) Filter backend controller java files
-//            List<String> backendApiFiles = changed.stream()
-//                    .filter(f -> f.replace('\\','/').startsWith(pathUnix(backendJavaPath)))
-//                    .filter(f -> f.contains("Controller"))
-//                    .toList();
             String backendPrefix = backendSrcRel.replace("\\", "/") + "/";
 
             List<String> backendApiFiles = changed.stream()
@@ -324,23 +113,6 @@ public class RiskService {
 
     private String pathUnix(String p) { return p.replace('\\','/'); }
 
-//    private Set<String> detectChangedApiEndpoints(List<String> apiFilesRelative) throws IOException {
-//        Set<String> apis = new HashSet<>();
-//        for (String rel : apiFilesRelative) {
-//            Path file = Paths.get(repoRoot, rel);
-//            log.info("Scanning controller file: {}", file);
-//            if (!Files.exists(file)) {
-//                log.warn("Changed file not found on disk: {}", file);
-//                continue;
-//            }
-//            String content = Files.readString(file);
-//            Matcher m = MAPPING.matcher(content);
-//            while (m.find()) {
-//                apis.add(m.group(2)); // "/api/..." path
-//            }
-//        }
-//        return apis;
-//    }
 
 
     private Set<String> detectChangedApiEndpoints(List<String> controllerFilesRel) throws IOException {
