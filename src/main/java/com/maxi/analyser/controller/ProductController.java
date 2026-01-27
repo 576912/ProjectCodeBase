@@ -25,6 +25,7 @@ public class ProductController {
     @GetMapping
     public List<Product> getProducts() {
         log.info("Get all products method is called..");
+
         //adding sample comment
         return productService.getAllProducts();
 
