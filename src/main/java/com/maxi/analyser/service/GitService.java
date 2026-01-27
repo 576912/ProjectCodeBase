@@ -51,6 +51,7 @@ public class GitService {
         StringBuilder out = new StringBuilder(), err = new StringBuilder();
         int code = run(List.of("git", "diff", "--name-only", base, head), out, err);
         List<String> files = new ArrayList<>();
+
         if (code == 0) {
             for (String line : out.toString().split("\n")) {
                 String trimmed = line.trim();
