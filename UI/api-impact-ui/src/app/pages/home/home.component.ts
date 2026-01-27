@@ -40,11 +40,12 @@ import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { ProductService } from '../../core/services/product.service';
 import { Product } from '../../core/models/product.model';
+import { ImpactHighlightDirective } from '../../core/directives/impact-highlight.directive';
 
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule,ImpactHighlightDirective],
   templateUrl: './home.component.html',
   styleUrl: './home.component.css'
 })

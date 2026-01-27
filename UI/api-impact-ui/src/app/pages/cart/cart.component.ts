@@ -13,11 +13,12 @@
 import { Component } from '@angular/core';
 import { ApiTrackerService } from '../../core/api-tracker.service';
 import { CommonModule } from '@angular/common';
+import { ImpactHighlightDirective } from '../../core/directives/impact-highlight.directive';
 
 @Component({
   selector: 'app-cart',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, ImpactHighlightDirective],
   templateUrl:'./cart.component.html'
 })
 export class CartComponent {

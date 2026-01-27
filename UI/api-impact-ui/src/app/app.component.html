@@ -7,6 +7,7 @@
   <div class="nav-right">
     <a routerLink="/signUp" class="nav-link">Sign Up</a>
     <a routerLink="/login" class="nav-link">Login</a>
+
   </div>
 </nav>
 
@@ -18,5 +19,17 @@
 
 <!-- Routed pages -->
 <!-- <div class="page-content"> -->
+  
+<button (click)="toggleImpactMode()"
+  style="position: fixed; bottom: 20px; right: 20px; z-index: 9999;
+         padding: 10px 14px; border-radius: 8px; background: #111; color: #fff;">
+  {{ impact.isEnabled() ? 'Impact Mode: ON' : 'Impact Mode: OFF' }}
+</button>
 
-<router-outlet></router-outlet>
+<!-- Example wrapping a UI section -->
+<div impactHighlight="home" style="margin-top: 60px;">
+  <router-outlet></router-outlet>
+</div>
+<!-- <router-outlet></router-outlet> -->
+
+
