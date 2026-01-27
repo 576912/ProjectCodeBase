@@ -3,11 +3,14 @@ import { HomeComponent } from './pages/home/home.component';
 import { ProductDetailsComponent } from './pages/product-detail/product-detail.component';
 import { CartComponent } from './pages/cart/cart.component';
 import { CheckoutComponent } from './pages/checkout/checkout.component';
+import { Signup } from './signup/signup';
+
 
 export const routes: Routes = [
   { path: '', component: HomeComponent },
   { path: 'product/:id', component: ProductDetailsComponent },
   { path: 'cart', component: CartComponent },
-  { path: 'checkout', component: CheckoutComponent }
+  { path: 'checkout', component: CheckoutComponent },
+  {path: 'signup', component: Signup}
 ];
 

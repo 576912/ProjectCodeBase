@@ -1,6 +1,6 @@
 
 import { Directive, ElementRef, Input, OnDestroy, OnInit, Renderer2 } from '@angular/core';
-import { Subscription } from 'rxjs';
+import { Subscription,merge } from 'rxjs';
 import { ImpactService } from '../services/impact.service';
 
 @Directive({
@@ -19,14 +19,28 @@ export class ImpactHighlightDirective implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit() {
-    this.sub = this.impact.enabledObs$.subscribe(enabled => {
+  // 1) Ensure you call impact.loadReport() somewhere on app startup (see below)
+  this.sub = merge(
+      this.impact.enabledObs$,
+      this.impact.impactChangedObs$
+    ).subscribe(() => {
       this.clear();
       const item = this.impact.getImpact(this.componentKey);
-      if (enabled && item) {
+      if (this.impact.isEnabled() && item) {
         this.apply(item.api, item.risk);
       }
     });
-  }
+}
+
+  // ngOnInit() {
+  //   this.sub = this.impact.enabledObs$.subscribe(enabled => {
+  //     this.clear();
+  //     const item = this.impact.getImpact(this.componentKey);
+  //     if (enabled && item) {
+  //       this.apply(item.api, item.risk);
+  //     }
+  //   });
+  // }
 
   private apply(api: string, risk: number) {
     const color = risk >= 0.8 ? '#dc2626' : risk >= 0.5 ? '#f59e0b' : '#10b981';

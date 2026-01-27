@@ -18,7 +18,7 @@ import { ImpactHighlightDirective } from '../../core/directives/impact-highlight
 @Component({
   selector: 'app-cart',
   standalone: true,
-  imports: [CommonModule, ImpactHighlightDirective],
+  imports: [CommonModule,ImpactHighlightDirective],
   templateUrl:'./cart.component.html'
 })
 export class CartComponent {
