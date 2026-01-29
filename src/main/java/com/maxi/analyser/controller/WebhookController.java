@@ -18,6 +18,7 @@ public class WebhookController {
         this.riskService = riskService;
     }
 
+
     @PostMapping("/github/webhook")
     public String handlePush(@RequestBody GitHubPushEvent event) {
         riskService.process(event.getBefore(), event.getAfter());
