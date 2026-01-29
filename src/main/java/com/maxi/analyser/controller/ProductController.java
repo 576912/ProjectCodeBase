@@ -26,7 +26,7 @@ public class ProductController {
     public List<Product> getProducts() {
         log.info("Get all products method is called..");
         //adding sample comment
-        log.info("Adding sample");
+        log.info("Adding sample hackathin");
         return productService.getAllProducts();
 
     }
