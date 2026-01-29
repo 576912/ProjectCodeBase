@@ -27,7 +27,6 @@ public class ProductController {
         log.info("Get all products method is called..");
         //adding sample comment
         return productService.getAllProducts();
-
     }
     @PostMapping
     public Product addProduct(@RequestBody Product product) {
