@@ -1,7 +1,4 @@
 {
   "impactedComponents": [
-    {"component":"product.service","api":"/api/products","risk":0.7},
-    {"component":"cart","api":"/api/products","risk":0.7},
-    {"component":"home","api":"/api/products","risk":0.7}
   ]
 }
